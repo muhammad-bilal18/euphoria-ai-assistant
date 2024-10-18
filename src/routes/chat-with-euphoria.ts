@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { chatWithEuphoria } from '../usecases/chatWithEuphoria';
 import { Message } from '../lib/types';
-import { pipeline } from 'stream';
 
 const router = Router();
 

@@ -30,7 +30,7 @@ const prompt = ChatPromptTemplate.fromTemplate(`
   Question: {input}
 
   Rules: 
-  1. If the question is not relevant to the context, respond with: "I apologize, but this question is outside the scope of the current document. I can only provide information related to the document's content."
+  1. If the question is not relevant to the context, respond with: "I can't assist with that request. However, if you have any questions related to AR/VR, AI, Blockchain or other related topics, feel free to ask, and I’d be happy to provide useful information."
   2. Every response must end with this line: For more details, please contact us at team@ocs.solution
   Note: These rules are very strict and will not be tolerated.
 `);
