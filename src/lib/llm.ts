@@ -5,6 +5,6 @@ import { config } from 'dotenv';
 config();
 
 export const ChatGPT = new ChatOpenAI({
-  modelName: 'gpt-3.5-turbo',
-  temperature: 0.9
+  modelName: 'gpt-4o-mini',
+  temperature: 0.9,
 });

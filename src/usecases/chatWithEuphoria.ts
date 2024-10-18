@@ -14,8 +14,8 @@ import { Message } from '../lib/types';
 import "pdf-parse";
 import "mammoth";
 
-const CHUNK_SIZE = 2000;
-const CHUNK_OVERLAP = 200;
+const CHUNK_SIZE = 400;
+const CHUNK_OVERLAP = 300;
 const RETRIEVER_K = 2;
 
 const pineconeIndexName = process.env.PINECONE_INDEX_NAME!;
