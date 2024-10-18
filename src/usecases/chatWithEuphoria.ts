@@ -21,12 +21,18 @@ const RETRIEVER_K = 2;
 const pineconeIndexName = process.env.PINECONE_INDEX_NAME!;
 
 const prompt = ChatPromptTemplate.fromTemplate(`
-    Answer the question based on the context below and also use the chat history for reference. Be concise.
-    Context: {context}
-    Chat History: {history}
-    Question: {input}
+  First, determine if the question is relevant to the context provided. If it's not relevant, respond with a polite message stating that the question is outside the scope of the current document.
 
-    Rules: Every response must end with this line: For more details, please contact us at team@ocs.solution
+  If the question is relevant, answer it based on the context below and also use the chat history for reference. Be concise.
+
+  Context: {context}
+  Chat History: {history}
+  Question: {input}
+
+  Rules: 
+  1. If the question is not relevant to the context, respond with: "I apologize, but this question is outside the scope of the current document. I can only provide information related to the document's content."
+  2. Every response must end with this line: For more details, please contact us at team@ocs.solution
+  Note: These rules are very strict and will not be tolerated.
 `);
 
 const pinecone = new Pinecone({
