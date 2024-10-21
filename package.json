@@ -25,6 +25,7 @@
     "aws-sdk": "^2.1691.0",
     "cheerio": "^1.0.0",
     "chromadb": "^1.9.2",
+    "cookie-parser": "^1.4.7",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -38,6 +39,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/mongoose": "^5.11.97",

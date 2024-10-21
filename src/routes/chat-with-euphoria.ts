@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { chatWithEuphoria } from '../usecases/chatWithEuphoria';
 import { Message, Role } from '../lib/types';
 import { ChatHistory } from '../model/chatHistory';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
@@ -10,22 +11,22 @@ let currentSession: string = '';
 
 router.post('/', async (req: Request, res: Response) => {
     try {
-        const { question, sessionId } = req.body;
+        const { question } = req.body;
+        let sessionid = req.cookies.sessionId;
+        if (!sessionid) {
+            sessionid = uuidv4();
+            res.cookie('sessionId', sessionid, { httpOnly: true, secure: true });
+        }
         if (!question) {
             res.status(400).send({ message: 'Question is required!' });
             return;
         }
-        
-        if (!sessionId) {
-            res.status(400).send({ message: 'Session id is required!' });
-            return;
-        }
 
-        if (currentSession !== sessionId) {
-            const currentHistory = await ChatHistory.findOne({ sessionId }).select('history');
+        if (currentSession !== sessionid) {
+            const currentHistory = await ChatHistory.findOne({ sessionid }).select('history');
             if (currentHistory) {
                 history = currentHistory.history;
-                currentSession = sessionId;
+                currentSession = sessionid;
             }
         }
         
@@ -47,7 +48,7 @@ router.post('/', async (req: Request, res: Response) => {
         }
         history.push({ role: Role.ASSISTANT, content: answer });
 
-        await ChatHistory.updateOne({ sessionId }, { $set: { history } }, { upsert: true });
+        await ChatHistory.updateOne({ sessionid }, { $set: { history } }, { upsert: true });
         res.end();
 
     } catch (error) {
