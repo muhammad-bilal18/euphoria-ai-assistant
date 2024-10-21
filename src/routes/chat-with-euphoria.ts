@@ -1,24 +1,36 @@
 import { Router, Request, Response } from 'express';
 import { chatWithEuphoria } from '../usecases/chatWithEuphoria';
-import { Message } from '../lib/types';
+import { Message, Role } from '../lib/types';
+import { ChatHistory } from '../model/chatHistory';
 
 const router = Router();
 
-const history: Message[] = [];
+let history: Message[] = [];
+let currentSession: string = '';
 
 router.post('/', async (req: Request, res: Response) => {
     try {
-        const { question } = req.body;
+        const { question, sessionId } = req.body;
         if (!question) {
             res.status(400).send({ message: 'Question is required!' });
             return;
         }
-
-        if (history.length === 10) {
-            history.splice(0, 2);
+        
+        if (!sessionId) {
+            res.status(400).send({ message: 'Session id is required!' });
+            return;
         }
 
-        history.push({ role: 'user', content: question as string });
+        if (currentSession !== sessionId) {
+            console.log('quering db...')
+            const currentHistory = await ChatHistory.findOne({ sessionId }).select('history');
+            if (currentHistory) {
+                history = currentHistory.history;
+                currentSession = sessionId;
+            }
+        }
+        
+        history.push({ role: Role.USER, content: question as string });
 
         const stream = await chatWithEuphoria(question, history, 'docx', 'src/documents/my-qa.docx');            
         const [logStream] = stream.tee();
@@ -34,7 +46,9 @@ router.post('/', async (req: Request, res: Response) => {
                 answer += value.answer;
             }
         }
-        history.push({ role: 'assistant', content: answer });
+        history.push({ role: Role.ASSISTANT, content: answer });
+
+        await ChatHistory.updateOne({ sessionId }, { $set: { history } }, { upsert: true });
         res.end();
 
     } catch (error) {

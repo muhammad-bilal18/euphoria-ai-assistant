@@ -89,6 +89,31 @@ const formatSessionHistory = (session: Message[]) => {
   return session.map((s) => `${s.role}: ${s.content}`).join('\n');
 };
 
+const optimizedPromptTemplate = ChatPromptTemplate.fromTemplate(`
+  Based on the given question and conversation history, generate a concise and coherent prompt that accurately reflects the core inquiry.
+  
+  Ensure the generated prompt:
+  - Is general yet maintains relevance to the specific question.
+  - Aligns with the context provided in the conversation history.
+  - Is easy to understand and actionable.
+  - If the history is empty then return the same question.
+  - If the question is irrelevant to the context, return the same question.
+  - Be concise and to the point.
+  - Format should be plain simple string.
+
+  Conversation History: {history}
+  Question: {question}
+`);
+
+
+const getOptimizedPrompt = async (
+  question: string,
+  history: string
+): Promise<string> => {
+  const optimizedPromptChain = optimizedPromptTemplate.pipe(ChatGPT).pipe(new StringOutputParser());
+  return await optimizedPromptChain.invoke({ question, history });
+};
+
 export const chatWithEuphoria = async (
   question: string,
   session: Message[],
@@ -99,7 +124,10 @@ export const chatWithEuphoria = async (
     const docs = await loadAndProcessDocument(fileType, path);
     const retrievalChain = await createRetrievalChainFromDocs(docs);
     const sessionHistory = formatSessionHistory(session);
-    const stream = await retrievalChain.stream({ input: question, history: sessionHistory });
+    const optimizedPrompt = await getOptimizedPrompt(question, sessionHistory);
+    console.log('history:', sessionHistory);
+    console.log('optimized prompt:', optimizedPrompt);
+    const stream = await retrievalChain.stream({ input: optimizedPrompt, history: sessionHistory });
     return stream;
   } catch (error) {
     console.error("Error in chatWithDocsLocally:", error);

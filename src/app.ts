@@ -2,6 +2,7 @@ import express from 'express';
 import { config } from "dotenv";
 import chat_with_euphoria from './routes/chat-with-euphoria';
 import cors from 'cors';
+import { connectDB } from './lib/db';
 
 config();
 
@@ -18,4 +19,5 @@ app.use('/chat-with-euphoria', chat_with_euphoria);
 
 app.listen(PORT, async () => {
   console.log('server listening on port', PORT);
+  await connectDB();
 })
