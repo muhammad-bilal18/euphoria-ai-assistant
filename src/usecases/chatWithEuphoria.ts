@@ -5,11 +5,11 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { DocxLoader } from "@langchain/community/document_loaders/fs/docx";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { OpenAIEmbeddings } from "@langchain/openai";
-import { createRetrievalChain } from 'langchain/chains/retrieval';
+import { createRetrievalChain } from "langchain/chains/retrieval";
 import { Document } from "@langchain/core/documents";
 import { PineconeStore } from "@langchain/pinecone";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { Message } from '../lib/types';
+import { Message } from "../lib/types";
 
 import "pdf-parse";
 import "mammoth";
@@ -29,9 +29,9 @@ const prompt = ChatPromptTemplate.fromTemplate(`
   Chat History: {history}
   Question: {input}
 
-  Rules: 
+  Rules:
   1. If the question is not relevant to the context, respond with: "I can't assist with that request. However, if you have any questions related to AR/VR, AI, Blockchain or other related topics, feel free to ask, and I’d be happy to provide useful information."
-  2. Every response must end with this line: For more details, please contact us at team@ocs.solution
+  2. Every response must end with this line: For more details, please contact us at contact@euphoriaxr.com
   Note: These rules are very strict and will not be tolerated.
 `);
 
@@ -48,7 +48,7 @@ const getVectorStore = async (docs: Document[]) => {
     const index = pinecone.Index(pineconeIndexName);
     vectorStore = await PineconeStore.fromDocuments(docs, embeddings, {
       pineconeIndex: index,
-      namespace: 'default',
+      namespace: "default",
     });
   }
   return vectorStore;
@@ -66,12 +66,12 @@ const createRetrievalChainFromDocs = async (docs: Document[]) => {
 
 const getLoader = (fileType: string, path: string) => {
   switch (fileType) {
-    case 'pdf':
+    case "pdf":
       return new PDFLoader(path);
-    case 'docx':
+    case "docx":
       return new DocxLoader(path);
     default:
-      throw new Error('Unsupported file type');
+      throw new Error("Unsupported file type");
   }
 };
 
@@ -86,12 +86,12 @@ const loadAndProcessDocument = async (fileType: string, path: string) => {
 };
 
 const formatSessionHistory = (session: Message[]) => {
-  return session.map((s) => `${s.role}: ${s.content}`).join('\n');
+  return session.map((s) => `${s.role}: ${s.content}`).join("\n");
 };
 
 const optimizedPromptTemplate = ChatPromptTemplate.fromTemplate(`
   Based on the given question and conversation history, generate a concise and coherent prompt that accurately reflects the core inquiry.
-  
+
   Ensure the generated prompt:
   - Is general yet maintains relevance to the specific question.
   - Aligns with the context provided in the conversation history.
@@ -105,27 +105,31 @@ const optimizedPromptTemplate = ChatPromptTemplate.fromTemplate(`
   Question: {question}
 `);
 
-
 const getOptimizedPrompt = async (
   question: string,
   history: string
 ): Promise<string> => {
-  const optimizedPromptChain = optimizedPromptTemplate.pipe(ChatGPT).pipe(new StringOutputParser());
+  const optimizedPromptChain = optimizedPromptTemplate
+    .pipe(ChatGPT)
+    .pipe(new StringOutputParser());
   return await optimizedPromptChain.invoke({ question, history });
 };
 
 export const chatWithEuphoria = async (
   question: string,
   session: Message[],
-  fileType: string = 'pdf',
-  path: string = 'src/documents/js.pdf'
+  fileType: string = "pdf",
+  path: string = "src/documents/js.pdf"
 ): Promise<ReadableStream> => {
   try {
     const docs = await loadAndProcessDocument(fileType, path);
     const retrievalChain = await createRetrievalChainFromDocs(docs);
     const sessionHistory = formatSessionHistory(session);
     const optimizedPrompt = await getOptimizedPrompt(question, sessionHistory);
-    const stream = await retrievalChain.stream({ input: optimizedPrompt, history: sessionHistory });
+    const stream = await retrievalChain.stream({
+      input: optimizedPrompt,
+      history: sessionHistory,
+    });
     return stream;
   } catch (error) {
     console.error("Error in chatWithDocsLocally:", error);
