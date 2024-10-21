@@ -22,7 +22,6 @@ router.post('/', async (req: Request, res: Response) => {
         }
 
         if (currentSession !== sessionId) {
-            console.log('quering db...')
             const currentHistory = await ChatHistory.findOne({ sessionId }).select('history');
             if (currentHistory) {
                 history = currentHistory.history;

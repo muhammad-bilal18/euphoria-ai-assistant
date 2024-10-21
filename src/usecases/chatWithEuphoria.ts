@@ -125,8 +125,6 @@ export const chatWithEuphoria = async (
     const retrievalChain = await createRetrievalChainFromDocs(docs);
     const sessionHistory = formatSessionHistory(session);
     const optimizedPrompt = await getOptimizedPrompt(question, sessionHistory);
-    console.log('history:', sessionHistory);
-    console.log('optimized prompt:', optimizedPrompt);
     const stream = await retrievalChain.stream({ input: optimizedPrompt, history: sessionHistory });
     return stream;
   } catch (error) {
