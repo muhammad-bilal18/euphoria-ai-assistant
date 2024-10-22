@@ -44,7 +44,7 @@ router.post('/', async (req: Request, res: Response) => {
             }
         }
         history.push({ role: Role.ASSISTANT, content: answer });
-        await client.set(sessionId, JSON.stringify(history), { EX: 10 });
+        await client.set(sessionId, JSON.stringify(history), { EX: 1800 });
         await ChatHistory.updateOne({ sessionId: sessionId }, { $set: { history } }, { upsert: true });
         res.end();
 
