@@ -13,6 +13,7 @@ import { Message } from '../lib/types';
 
 import "pdf-parse";
 import "mammoth";
+import { generateQuestionPrompt, generateAnswerPrompt } from "../lib/prompts";
 
 const CHUNK_SIZE = 400;
 const CHUNK_OVERLAP = 300;
@@ -20,20 +21,7 @@ const RETRIEVER_K = 2;
 
 const pineconeIndexName = process.env.PINECONE_INDEX_NAME!;
 
-const prompt = ChatPromptTemplate.fromTemplate(`
-  First, determine if the question is relevant to the context provided. If it's not relevant, respond with a polite message stating that the question is outside the scope of the current document.
-
-  If the question is relevant, answer it based on the context below and also use the chat history for reference. Be concise.
-
-  Context: {context}
-  Chat History: {history}
-  Question: {input}
-
-  Rules: 
-  1. If the question is not relevant to the context, respond with: "I can't assist with that request. However, if you have any questions related to AR/VR, AI, Blockchain or other related topics, feel free to ask, and I’d be happy to provide useful information."
-  2. Every response must end with this line: For more details, please contact us at team@ocs.solution
-  Note: These rules are very strict and will not be tolerated.
-`);
+const prompt = ChatPromptTemplate.fromTemplate(generateAnswerPrompt);
 
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY!,
@@ -89,21 +77,7 @@ const formatSessionHistory = (session: Message[]) => {
   return session.map((s) => `${s.role}: ${s.content}`).join('\n');
 };
 
-const optimizedPromptTemplate = ChatPromptTemplate.fromTemplate(`
-  Based on the given question and conversation history, generate a concise and coherent prompt that accurately reflects the core inquiry.
-  
-  Ensure the generated prompt:
-  - Is general yet maintains relevance to the specific question.
-  - Aligns with the context provided in the conversation history.
-  - Is easy to understand and actionable.
-  - If the history is empty then return the same question.
-  - If the question is irrelevant to the context, return the same question.
-  - Be concise and to the point.
-  - Format should be plain simple string.
-
-  Conversation History: {history}
-  Question: {question}
-`);
+const optimizedPromptTemplate = ChatPromptTemplate.fromTemplate(generateQuestionPrompt);
 
 
 const getOptimizedPrompt = async (

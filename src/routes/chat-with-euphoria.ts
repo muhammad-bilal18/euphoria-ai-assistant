@@ -3,33 +3,30 @@ import { chatWithEuphoria } from '../usecases/chatWithEuphoria';
 import { Message, Role } from '../lib/types';
 import { ChatHistory } from '../model/chatHistory';
 import { v4 as uuidv4 } from 'uuid';
+import { getRedisClient } from '../lib/redisClient';
 
 const router = Router();
-
-let history: Message[] = [];
-let currentSession: string = '';
 
 router.post('/', async (req: Request, res: Response) => {
     try {
         const { question } = req.body;
-        let sessionid = req.cookies.sessionId;
-        if (!sessionid) {
-            sessionid = uuidv4();
-            res.cookie('sessionId', sessionid, { httpOnly: true, secure: true });
+        let sessionId = req.cookies.sessionId;
+        if (!sessionId) {
+            sessionId = uuidv4();
+            res.cookie('sessionId', sessionId, { httpOnly: true, secure: true });
         }
         if (!question) {
             res.status(400).send({ message: 'Question is required!' });
             return;
         }
 
-        if (currentSession !== sessionid) {
-            const currentHistory = await ChatHistory.findOne({ sessionid }).select('history');
-            if (currentHistory) {
-                history = currentHistory.history;
-                currentSession = sessionid;
-            }
+        const client = await getRedisClient();
+        let history: Message[] = await JSON.parse((await client.get(sessionId))!);
+
+        if (!history) {
+            const currentHistory = await ChatHistory.findOne({ sessionId }).select('history');
+            history = currentHistory?.history as Message[] || [];
         }
-        
         history.push({ role: Role.USER, content: question as string });
 
         const stream = await chatWithEuphoria(question, history, 'docx', 'src/documents/my-qa.docx');            
@@ -47,8 +44,8 @@ router.post('/', async (req: Request, res: Response) => {
             }
         }
         history.push({ role: Role.ASSISTANT, content: answer });
-
-        await ChatHistory.updateOne({ sessionid }, { $set: { history } }, { upsert: true });
+        await client.set(sessionId, JSON.stringify(history), { EX: 10 });
+        await ChatHistory.updateOne({ sessionId: sessionId }, { $set: { history } }, { upsert: true });
         res.end();
 
     } catch (error) {
