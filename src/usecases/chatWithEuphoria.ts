@@ -92,8 +92,8 @@ const getOptimizedPrompt = async (
 export const chatWithEuphoria = async (
   question: string,
   session: Message[],
-  fileType: string = "pdf",
-  path: string = "src/documents/js.pdf"
+  fileType: string,
+  path: string
 ): Promise<ReadableStream> => {
   try {
     const docs = await loadAndProcessDocument(fileType, path);
